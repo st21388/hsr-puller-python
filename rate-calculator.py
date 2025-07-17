@@ -24,7 +24,7 @@ def get_rate_4_star(warp):
 def get_rate_5_star(warp):
     # base rate same until we reach 74th pull
     if warp < 74:
-        return 0.06
+        return 0.006
     
     # after 73th pull, the rate increase 6% per pull until 90 pull
     elif warp <= 90 and warp >= 74:
@@ -54,7 +54,8 @@ while True:
     # do a random number from 1 - 100, check the number is lower than the rate (e.g random pulls 0.5 and the rate is 0.6 its a win)
     if (rate_5*100) > uniform(0.0,100.0) and (rate_4*100) > uniform(0.0,100.0):
         print("5 STAR WIN")
-        WARP_5 = 0 # reset warp to 0
+        WARP_5 = 0 # reset both warps to 0
+        WARP_4 = 0
     elif (rate_4*100) > uniform(0.0,100.0):
         print("4 STAR WIN")
         WARP_4 = 0
