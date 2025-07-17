@@ -31,11 +31,82 @@ def get_rate_5_star(warp):
     elif warp <= 90 and warp >= 74:
         return (warp - 73) * 0.06 + 0.006
 
+def roll(rate_four, rate_five): # the current rate (account for pity) and the type of rarity (4* or 5*)
+    win = False # set the win condition to false
+    if (rate_four*100) > random.uniform(0.0,100.0) and (rate_five*100) > random.uniform(0.0,100.0):
+        return "5&4"
+    elif (rate_five*100) > random.uniform(0.0,100.0):
+        return "5"
+    elif (rate_four*100) > random.uniform(0.0,100.0):
+        return "4"
+
 # open and load the list in the json into variable named data
 with open("history.json") as f:
     data = json.load(f)
 
 while True:
-    pull_number = int(input("Enter 1x or 10x roll: "))
-    if pull_number == 1:
-        rate_4 = get_rate_4_star(data["warp_4"])
+    pull_number = input("Enter 1x or 10x roll: ") # get number of pulls
+
+    if pull_number == "1": # for single pulls
+        data["warp_4"] += 1 # increment 4 & 5 star pity count by 1
+        data["warp_5"] += 1
+        rate_4 = get_rate_4_star(data["warp_4"]) # calculate the rates
+        rate_5 = get_rate_5_star(data["warp_5"])
+        
+        outcome = roll(rate_4,rate_5) # roll the dice
+        if outcome == "5&4": # if both 5 and 4 star win, discard 4 star
+            data["history"].append(5)
+            data["warp_5"] = 0
+            data["warp_4"] = 0
+            print("5 STAR WIN!")
+        elif outcome == "5": # if 5 star win, reset 5* pity not 4 star
+            data["history"].append(5)
+            data["warp_5"] = 0
+            print("5 STAR WIN!")
+        elif outcome == "4": # if 4 star win, reset 4* pity not 5 star
+            data["history"].append(4)
+            data["warp_4"] = 0
+            print("4 STAR WIN!")
+        else: # else, then 3 star was won
+            data["history"].append(3)
+            print("3 STAR")
+        
+        if len(data["history"]) == 300:
+            data["history"].pop(0) # history can not store over 300 pulls
+
+
+    if pull_number == "10": # for 10x pulls
+        for i in range(0,10,1):
+            data["warp_4"] += 1 # increment 4 & 5 star pity count by 1
+            data["warp_5"] += 1
+            rate_4 = get_rate_4_star(data["warp_4"]) # calculate the rates
+            rate_5 = get_rate_5_star(data["warp_5"])
+            
+            outcome = roll(rate_4,rate_5) # roll the dice
+            if outcome == "5&4": # if both 5 and 4 star win, discard 4 star
+                data["history"].append(5)
+                data["warp_5"] = 0
+                data["warp_4"] = 0
+                print("5 STAR WIN!")
+            elif outcome == "5": # if 5 star win, reset 5* pity not 4 star
+                data["history"].append(5)
+                data["warp_5"] = 0
+                print("5 STAR WIN!")
+            elif outcome == "4": # if 4 star win, reset 4* pity not 5 star
+                data["history"].append(4)
+                data["warp_4"] = 0
+                print("4 STAR WIN!")
+            else: # else, then 3 star was won
+                data["history"].append(3)
+                print("3 STAR")
+            
+            if len(data["history"]) == 300:
+                data["history"].pop(0) # history can not store over 300 pulls
+
+
+    if pull_number == "clear": # debug for clearing the history.json dictionary
+        data = {"history": [], "warp_4": 0, "warp_5": 0}
+
+
+    with open("history.json", 'w') as f:
+        json.dump(data, f, indent = 1)
