@@ -20,7 +20,9 @@ class main_frame:
         root.configure(bg='black') # set the background
         
         # instantiating variables
-        self.current_banner = 0
+        self.current_banner = 0 # which banner the GUI is currently on
+        self.err_window_creation = False # does an error window currently exist? for the pull() and pull_error_window() methods
+        self.new_window = None # initialise the new window creation so we can call it in pull() and pull_error_window()
         
         '''LEFT SIDE PANEL'''
         left_panel = Frame(root, bg='black', width=300)
@@ -97,18 +99,41 @@ class main_frame:
         label_currency.pack(side='right', padx=5)
         
         # placeholder banner content
-        label_banner_zero = Label(self.right_panel, text="Select a banner!", bg="lightcoral", font=("Arial", 24))
-        label_banner_zero.pack(expand=True)
+        self.label_banner_content = Label(self.right_panel, text="Select a banner!", bg="lightcoral", font=("Arial", 24))
+        self.label_banner_content.pack(expand=True)
         
         # pull buttons
         self.pull_frame = Frame(self.right_panel, bg='lightcoral')
         self.pull_frame.pack(side='bottom', pady=20)
         
-        button_single = Button(self.pull_frame, text="1x\n160 gems", width=10, height=2)
+        button_single = Button(self.pull_frame, text="1x\n160 gems", width=10, height=2,
+                               command=lambda: self.pull('single'))
         button_single.pack(side="left", padx=20)
-        button_ten = Button(self.pull_frame, text="10x\n1600 gems", width=10, height=2)
+        button_ten = Button(self.pull_frame, text="10x\n1600 gems", width=10, height=2,
+                            command=lambda: self.pull('ten'))
         button_ten.pack(side="left", padx=20)
+
+    def banner_one(self): # display banner 1
+        self.current_banner = 1 # change the variable to the current banner
+        self.right_panel.config(bg='blue') # change bg
+        self.label_banner.config(text="Banner 1") # change title text
+        self.pull_frame.config(bg='blue') # change pull button's bg
+        self.label_banner_content.config(text="CharArt 1", bg='blue') # change img of char (right now just placeholder text)
+
+    def banner_two(self): # display banner 2
+        self.current_banner = 2
+        self.right_panel.config(bg='green')
+        self.label_banner.config(text="Banner 2")
+        self.pull_frame.config(bg='green')
+        self.label_banner_content.config(text="CharArt 2", bg='green')
         
+    def banner_three(self): # display banner 3
+        self.current_banner = 3
+        self.right_panel.config(bg='yellow')
+        self.label_banner.config(text="Banner 3")
+        self.pull_frame.config(bg='yellow')
+        self.label_banner_content.config(text='CharArt 3', bg='yellow')
+
     def calc_currency(self, operation):
         '''calculate currency for currency widget (both add and subtract)'''
         if operation == "add": # when pressing the add button
@@ -136,24 +161,45 @@ class main_frame:
                     self.label_currency_help.config(text="Enter an integer above 0.", bg='skyblue', width=20) # reset the help text
             except ValueError:
                 self.label_currency_help.config(text="Input must be an integer above 0.", bg="lightcoral", wraplength=160)
-    
-    def banner_one(self):
-        self.current_banner = 1
-        self.right_panel.config(bg='blue')
-        self.label_banner.config(text="Banner 1")
-        self.pull_frame.config(bg='blue')
-
-    def banner_two(self):
-        self.current_banner = 2
-        self.right_panel.config(bg='green')
-        self.label_banner.config(text="Banner 2")
-        self.pull_frame.config(bg='green')
         
-    def banner_three(self):
-        self.current_banner = 3
-        self.right_panel.config(bg='yellow')
-        self.label_banner.config(text="Banner 3")
-        self.pull_frame.config(bg='yellow')        
+    def pull(self, option):
+        '''runs when the pull buttons are pressed (in future versions, this will
+        change to the pull frame as well as subtract currency'''
+        err_window_creation = False # set a boolean to determine if the error window exists (so that multiple windows don't just exist if the user spams the button)
+        
+        if option == "single": # if single pull button pressed
+            if int(self.varLabel_currency.cget('text')) >= 160: # if able to afford 160 gems
+                calculation = int(self.varLabel_currency.cget("text")) - 160 # calculate current currency - 160
+                self.varLabel_currency.config(text=str(calculation)) # update currency
+                if self.err_window_creation == True: # if err_window exists
+                    self.err_window_creation = False
+                    self.new_window.destroy() # destroy it
+            else:
+                if self.err_window_creation == False: # if window doesn't exist
+                    self.err_window_creation = True # set to true
+                    self.pull_error_window() # create err_window
+                else: # destroys old window and pulls up another new one
+                    '''this is so that lots of windows don't clog up the pc screen,
+                    destroying the old one and creating a new one helps to bring
+                    the error message to the user's screen instead of just keeping
+                    the old one which could be under another window.'''
+                    self.new_window.destroy() # destroy old window
+                    self.pull_error_window() # create new one
+        elif option == "ten":
+            if int(self.varLabel_currency.cget('text')) >= 1600: # if able to afford 1600 gems
+                calculation = int(self.varLabel_currency.cget('text')) - 1600
+                self.varLabel_currency.config(text=str(calculation))
+            else:
+                self.pull_error_window()
+    
+    def pull_error_window(self):
+        '''error window that shows when you don't have enough gems to afford a
+        pull, credit to: https://www.geeksforgeeks.org/python/open-a-new-window-with-a-button-in-python-tkinter/'''
+        self.new_window = Toplevel(root) # Create a new window
+        self.new_window.title("Currency Error")
+        self.new_window.geometry('250x150')
+        
+        Label(self.new_window, text="Error, not enough currency to afford pull.").pack(pady=20)
 
 root = Tk() # establish the root of the window
 app = main_frame(root) # create the app object using class converter
