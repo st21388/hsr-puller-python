@@ -53,17 +53,45 @@ class reward_frame:
         Button(self.single_frame, text="Back", command=lambda: self.show_frame('button')).pack()
 
         # Add content to ten_frame
-        result1 = Label(self.ten_frame, text='3 star', width=320, height=240,
+        result1 = Label(self.ten_frame, text='3 star',
                         bg='lightblue')
-        result1.grid(row=0, column=0)
+        result1.grid(row=0, column=0, sticky='nswe')
         
-        result2= Label(self.ten_frame, text='3 star', width=320, height=240,
+        result2= Label(self.ten_frame, text='3 star',
                         bg='lightblue')
-        result2.grid(row=0, column=1)        
+        result2.grid(row=0, column=1, sticky='nswe')        
         
-        result3 = Label(self.ten_frame, text='3 star', width=320, height=240,
+        result3 = Label(self.ten_frame, text='3 star',
                         bg='lightblue')
-        result3.grid(row=0, column=2)
+        result3.grid(row=0, column=2, sticky='nswe')
+        
+        result4 = Label(self.ten_frame, text='3 star',
+                        bg='lightblue')
+        result4.grid(row=0, column=3, sticky='nswe')
+        
+        result5 = Label(self.ten_frame, text='3 star',
+                        bg='lightblue')
+        result5.grid(row=1, column=0, sticky='nswe')
+        
+        result6 = Label(self.ten_frame, text='3 star',
+                        bg='lightblue')
+        result6.grid(row=1, column=1, sticky='nswe')
+        
+        result7 = Label(self.ten_frame, text='3 star',
+                        bg='lightblue')
+        result7.grid(row=1, column=2, sticky='nswe')
+        
+        result8 = Label(self.ten_frame, text='3 star',
+                        bg='lightblue')
+        result8.grid(row=1, column=3, sticky='nswe')
+        
+        result9 = Label(self.ten_frame, text='3 star',
+                        bg='lightblue')
+        result9.grid(row=2, column=1, sticky='nswe')
+        
+        result10 = Label(self.ten_frame, text='3 star',
+                         bg='lightblue')
+        result10.grid(row=2, column=2, sticky='nswe')
         
         Button(self.ten_frame, text="Back", command=lambda: self.show_frame('button')).grid(row=3, column=1, sticky='nswe')
 
