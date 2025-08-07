@@ -17,13 +17,13 @@ replicate this type of list based on information pulled from the json file'''
 placeholder_data = [
     [('3 star', 3, 2), ('3 star', 2, 1), ('4 star', 1, 3), ('5 star', 4, 2),
      ('3 star', 3, 1), ('4 star', 2, 1), ('4 star', 1, 5), ('5 star', 3, 4),
-     ('3 star', 2, 3), ('3 star', 1, 2)],
+     ('3 star', 2, 3), ('3 star', 1, 2)], # 1
     [('5 star', 80, 1), ('4 star', 79, 5), ('3 star', 78, 4), ('3 star', 76, 3),
      ('3 star', 75, 2), ('3 star', 74, 1), ('4 star', 73, 8), ('3 star', 72, 7),
-     ('3 star', 71, 6), ('3 star', 70, 5)],
+     ('3 star', 71, 6), ('3 star', 70, 5)], # 2
     [('3 star', 69, 4), ('3 star', 68, 3), ('3 star', 67, 2), ('3 star', 66, 1),
      ('4 star', 65, 9), ('3 star', 64, 8), ('3 star', 63, 7), ('3 star', 62, 6),
-     ('3 star', 61, 5), ('3 star', 60, 4)]
+     ('3 star', 61, 5), ('3 star', 60, 4)] # 3
 ]
 
 class history_frame:
@@ -89,17 +89,27 @@ class history_frame:
         '''going through the pulls array, enumerate each indice to store
         (rarity, pity5, pity4) and ...... add more comments and info'''
         for i, (rarity, pity5, pity4) in enumerate(pulls):
-            if rarity=='5 star':
+            if rarity=='5 star': # 5*=yellow, 4*=purple, 3*=blue
                 colour = "yellow"
             elif rarity=='4 star':
                 colour = "#CBC3E3"
             else:
                 colour = "lightblue"
             
-            self.entries[i].configure(
+            self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
                 text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
                 bg=colour
             )
+        
+        if self.current_page == 0: # if first page, disable prev, enable next
+            self.prev_button.config(state='disabled')
+            self.next_button.config(state='normal')
+        elif (self.current_page + 1) == len(placeholder_data): # if last page, enable prev, disable next
+            self.prev_button.config(state='normal')
+            self.next_button.config(state='disabled')
+        else: # if not first or last, enable both
+            self.prev_button.config(state='normal')
+            self.next_button.config(state='normal')
     
     def prev_page(self):
         if (self.current_page + 1) > 1:
