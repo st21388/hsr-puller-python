@@ -10,6 +10,10 @@ all 300 previous individual pulls.
 from tkinter import *
 import json
 
+'''each array has 10 items, in each item is (rarity, 5* pity, 4* pity) i wrote
+this data by hand and it is accurate as pity counts up from the last 4*/5*
+pulled. Page 1 (index[0]) holds most recent pulls. Version 2 will have code to
+replicate this type of list based on information pulled from the json file'''
 placeholder_data = [
     [('3 star', 3, 2), ('3 star', 2, 1), ('4 star', 1, 3), ('5 star', 4, 2),
      ('3 star', 3, 1), ('4 star', 2, 1), ('4 star', 1, 5), ('5 star', 3, 4),
@@ -18,7 +22,8 @@ placeholder_data = [
      ('3 star', 75, 2), ('3 star', 74, 1), ('4 star', 73, 8), ('3 star', 72, 7),
      ('3 star', 71, 6), ('3 star', 70, 5)],
     [('3 star', 69, 4), ('3 star', 68, 3), ('3 star', 67, 2), ('3 star', 66, 1),
-     ('4 star', 65, 9), ('3 star', 64, 8)]
+     ('4 star', 65, 9), ('3 star', 64, 8), ('3 star', 63, 7), ('3 star', 62, 6),
+     ('3 star', 61, 5), ('3 star', 60, 4)]
 ]
 
 class history_frame:
@@ -32,7 +37,7 @@ class history_frame:
         root.configure(bg='black') # set the background colour
         
         # instantiating variables
-        self.current_banner = 1 # which banner the GUI needs to get info for
+        self.current_banner = 1 # which banner the GUI needs to get info for (for version 2)
         self.current_page = 0 # the current page that the history gui is on
         
         '''TOP SIDE PANEL'''
@@ -68,7 +73,7 @@ class history_frame:
                                   command=self.prev_page) # previous page button
         self.prev_button.grid(row=0,column=0,padx=20)
         
-        self.page_label = Label(page_frame,text='Page 1', font=("Arial",14),
+        self.page_label = Label(page_frame,text=f"Page {self.current_page + 1}", font=("Arial",14),
                                 fg='white',bg='black') # label to display page
         self.page_label.grid(row=0,column=1)
         
@@ -79,7 +84,7 @@ class history_frame:
         self.update_display() # add content to the display
         
     def update_display(self):
-        pulls = placeholder_data[self.current_banner - 1] # get the current page's pulls to display
+        pulls = placeholder_data[self.current_page] # get the current page's pulls to display
         
         '''going through the pulls array, enumerate each indice to store
         (rarity, pity5, pity4) and ...... add more comments and info'''
@@ -95,14 +100,18 @@ class history_frame:
                 text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
                 bg=colour
             )
-        
-        self.page_label.config(text=f"Page {self.current_banner}")
     
     def prev_page(self):
-        if self.current_banner < 
+        if (self.current_page + 1) > 1:
+            self.current_page -= 1
+            self.page_label.config(text=f"Page {self.current_page + 1}")
+            self.update_display()
     
     def next_page(self):
-        pass
+        if (self.current_page + 1) < len(placeholder_data):
+            self.current_page += 1
+            self.page_label.config(text=f"Page {self.current_page + 1}")
+            self.update_display()
 
 root = Tk() # establish the root of the window
 app = history_frame(root) # create the app object using class converter
