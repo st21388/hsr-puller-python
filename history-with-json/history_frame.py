@@ -63,7 +63,7 @@ class history_frame:
         top_panel = Frame(root, bg='black', height=90)
         top_panel.pack(side='top', fill='x')
         
-        # current banner label        
+        # current banner label
         self.label_current_banner = Label(top_panel,
                                           text= f"History - Banner {str(self.current_banner)}",
                                           fg='white', bg='black', font=('Arial', 28))
@@ -118,7 +118,7 @@ class history_frame:
                 text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
                 bg=colour)
         
-            if ones > 0 and (self.current_page + 1) == len(pulls): # if it is the last page and the total number of pulls done is not a multiple of 10
+            if ones > 0 and (self.current_page + 1) == len(pull_info): # if it is the last page and the total number of pulls done is not a multiple of 10
                 # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
                 for i in range(ones, 10, 1):
                     self.entries[i].configure(
@@ -127,7 +127,7 @@ class history_frame:
         if self.current_page == 0: # if first page, disable prev, enable next
             self.prev_button.config(state='disabled')
             self.next_button.config(state='normal')
-        elif (self.current_page + 1) == len(pulls): # if last page, enable prev, disable next
+        elif (self.current_page + 1) == len(pull_info): # if last page, enable prev, disable next
             self.prev_button.config(state='normal')
             self.next_button.config(state='disabled')
         else: # if not first or last, enable both
