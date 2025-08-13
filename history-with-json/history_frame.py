@@ -15,33 +15,35 @@ the placeholder list whenever grabbing rarity and pull pity data.
 from tkinter import *
 import json
 
-'''each array has 10 items, in each item is (rarity, 5* pity, 4* pity) i wrote
-this data by hand and it is accurate as pity counts up from the last 4*/5*
-pulled. Page 1 (index[0]) holds most recent pulls. Version 2 will have code to
-replicate this type of list based on information pulled from the json file'''
-placeholder_data = [
-    [('3 star', 3, 2), ('3 star', 2, 1), ('4 star', 1, 3), ('5 star', 4, 2),
-     ('3 star', 3, 1), ('4 star', 2, 1), ('4 star', 1, 5), ('5 star', 3, 4),
-     ('3 star', 2, 3), ('3 star', 1, 2)], # 1
-    [('5 star', 80, 1), ('4 star', 79, 5), ('3 star', 78, 4), ('3 star', 76, 3),
-     ('3 star', 75, 2), ('3 star', 74, 1), ('4 star', 73, 8), ('3 star', 72, 7),
-     ('3 star', 71, 6), ('3 star', 70, 5)], # 2
-    [('3 star', 69, 4), ('3 star', 68, 3), ('3 star', 67, 2), ('3 star', 66, 1),
-     ('4 star', 65, 9), ('3 star', 64, 8), ('3 star', 63, 7), ('3 star', 62, 6),
-     ('3 star', 61, 5), ('3 star', 60, 4)] # 3
-]
-
+'''organising information from json to a list.
+each array has 10 items, in each item is (rarity, 5* pity, 4* pity). Page 1
+(index[0]) holds most recent pulls.'''
 # store pulling information dictionary in variable data
 with open("history.json") as f:
     data = json.load(f)
 
-data['history'].reverse()
+data['history'].reverse() # reverse info in the data history list so last pull appears as first
+pages = (len(data['history'])//10) # if theres 78 pulls, this shows 7
+ones = len(data['history']) - (pages*10) # if theres 78 pulls this shows 8
 
-tens = (len(data['history'])//10) * 10
-ones = (len(data['history'])) - tens
+pull_info = [] # list that stores pages and each page's info
+foo_list = [] # temporary list to store each page's info for the nested for loop below
 
-for i in range(1, (tens//10) + 1, 1):
-    print(i)
+z = 0 # create another variable z to represent the index of items in data['history']
+for x in range(1, (pages) + 1, 1): # looping for each page
+    for y in range(1, 11, 1): # looping 10 times for 10 items in each page
+        temp = (data['history'][z][0], data['history'][z][1], data['history'][z][2])
+        foo_list.append(temp) # append data to foo_list
+        z += 1 # increment z by 1, moves to the next item; z is saved even when loop ends
+    pull_info.append(foo_list) # append the page to pull_info
+    foo_list = [] # clear foo_list
+
+if ones > 0: # if there have been 10, 20, 30 pulls, ones would be 0 and every item would already be in the list
+    for i in range(1, (ones) + 1, 1): # appending the last couple of items
+        temp = (data['history'][z][0], data['history'][z][1], data['history'][z][2])
+        foo_list.append(temp)
+        z+=1
+    pull_info.append(foo_list)
 
 class history_frame:
     
@@ -101,44 +103,61 @@ class history_frame:
         self.update_display() # add content to the display
         
     def update_display(self):
-        pulls = placeholder_data[self.current_page] # get the current page's pulls to display
+        pulls = pull_info[self.current_page] # get the current page's pulls to display
         
         '''going through the pulls array, enumerate each indice to store
         (rarity, pity5, pity4) and ...... add more comments and info'''
-        for i, (rarity, pity5, pity4) in enumerate(pulls):
-            if rarity=='5 star': # 5*=yellow, 4*=purple, 3*=blue
-                colour = "yellow"
-            elif rarity=='4 star':
-                colour = "#CBC3E3"
-            else:
-                colour = "lightblue"
-            
-            self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
-                text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
-                bg=colour
-            )
+        if ones > 0 and (self.current_page + 1) == len(pulls): # if it is the last page and the total number of pulls done is not a multiple of 10
+            for i, (rarity, pity5, pity4) in enumerate(pulls):
+                print(i, rarity, pity5, pity4)
+                if rarity==5: # 5*=yellow, 4*=purple, 3*=blue
+                    colour = "yellow"
+                elif rarity==4:
+                    colour = "#CBC3E3"
+                else:
+                    colour = "lightblue"
+                self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
+                    text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
+                    bg=colour)  
+        
+            # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
+            for i in range(ones, 10, 1):
+                self.entries[i].configure(
+                    bg='black')
+        
+        else: # for every other page that isn't the last one, it will do 10 entries
+            for i, (rarity, pity5, pity4) in enumerate(pulls):
+                if rarity==5:
+                    colour = "yellow"
+                elif rarity==4:
+                    colour = "#CBC3E3"
+                else:
+                    colour = "lightblue"
+                self.entries[i].configure(
+                    text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
+                    bg=colour)
         
         if self.current_page == 0: # if first page, disable prev, enable next
             self.prev_button.config(state='disabled')
             self.next_button.config(state='normal')
-        elif (self.current_page + 1) == len(placeholder_data): # if last page, enable prev, disable next
+        elif (self.current_page + 1) == len(pulls): # if last page, enable prev, disable next
             self.prev_button.config(state='normal')
             self.next_button.config(state='disabled')
         else: # if not first or last, enable both
             self.prev_button.config(state='normal')
             self.next_button.config(state='normal')
     
-    def prev_page(self):
-        if (self.current_page + 1) > 1:
-            self.current_page -= 1
-            self.page_label.config(text=f"Page {self.current_page + 1}")
-            self.update_display()
+    def prev_page(self): # button for previous page
+        if (self.current_page + 1) > 1: # if not at first page
+            self.current_page -= 1 # minus page by 1
+            self.page_label.config(text=f"Page {self.current_page + 1}") # change label
+            self.update_display() # update labels to show new pulls
     
-    def next_page(self):
-        if (self.current_page + 1) < len(placeholder_data):
-            self.current_page += 1
-            self.page_label.config(text=f"Page {self.current_page + 1}")
-            self.update_display()
+    def next_page(self): # button for next page
+        if (self.current_page + 1) < len(pull_info): # if not at last page
+            self.current_page += 1 # add page by 1
+            self.page_label.config(text=f"Page {self.current_page + 1}") # update label
+            self.update_display() # update labels in center
 
 root = Tk() # establish the root of the window
 app = history_frame(root) # create the app object using class converter
