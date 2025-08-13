@@ -107,35 +107,22 @@ class history_frame:
         
         '''going through the pulls array, enumerate each indice to store
         (rarity, pity5, pity4) and ...... add more comments and info'''
-        if ones > 0 and (self.current_page + 1) == len(pulls): # if it is the last page and the total number of pulls done is not a multiple of 10
-            for i, (rarity, pity5, pity4) in enumerate(pulls):
-                print(i, rarity, pity5, pity4)
-                if rarity==5: # 5*=yellow, 4*=purple, 3*=blue
-                    colour = "yellow"
-                elif rarity==4:
-                    colour = "#CBC3E3"
-                else:
-                    colour = "lightblue"
-                self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
-                    text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
-                    bg=colour)  
+        for i, (rarity, pity5, pity4) in enumerate(pulls): # for every pull (loops ten times unless last page doesn't have 10)
+            if rarity==5: # 5*=yellow, 4*=purple, 3*=blue
+                colour = "yellow"
+            elif rarity==4:
+                colour = "#CBC3E3"
+            else:
+                colour = "lightblue"
+            self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
+                text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
+                bg=colour)
         
-            # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
-            for i in range(ones, 10, 1):
-                self.entries[i].configure(
-                    bg='black')
-        
-        else: # for every other page that isn't the last one, it will do 10 entries
-            for i, (rarity, pity5, pity4) in enumerate(pulls):
-                if rarity==5:
-                    colour = "yellow"
-                elif rarity==4:
-                    colour = "#CBC3E3"
-                else:
-                    colour = "lightblue"
-                self.entries[i].configure(
-                    text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
-                    bg=colour)
+            if ones > 0 and (self.current_page + 1) == len(pulls): # if it is the last page and the total number of pulls done is not a multiple of 10
+                # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
+                for i in range(ones, 10, 1):
+                    self.entries[i].configure(
+                        bg='black')
         
         if self.current_page == 0: # if first page, disable prev, enable next
             self.prev_button.config(state='disabled')
