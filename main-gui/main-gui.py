@@ -15,16 +15,23 @@ from tkinter import *
 import json
 import random
 
-class main_frame: # main gui that opens when program is run
+"""main gui that opens when program is run"""
+class main_frame(Tk): # parameter Tk is used to create the window in super()
     
-    def __init__(self, root):
+    def __init__(self):
         '''Initialisation method'''
         # defining the Tk() window
-        self.root = root
-        root.title("Main Window")
-        root.geometry("1280x720") # set the dimensions of the window
-        root.resizable(0,0) # make the window not resizeable
-        root.configure(bg='black') # set the background
+        super().__init__() # this is necessary for creating history frame
+        '''super().__init__() is the same as doing self.root = root from version
+        1. Difference is that we do not need to use root, we are putting Tk as a
+        parameter in the class - main_frame(Tk): and super calls from that.'''
+        '''source where I learned this information:
+        https://www.geeksforgeeks.org/python/python-super-with-__init__-method/
+        https://stackoverflow.com/questions/576169/understanding-python-super-with-init-methods'''
+        self.title("Main Window")
+        self.geometry("1280x720") # set the dimensions of the window
+        self.resizable(0,0) # make the window not resizeable
+        self.configure(bg='black') # set the background
         
         # instantiating variables
         self.current_banner = 0 # which banner the GUI is currently on
@@ -34,15 +41,15 @@ class main_frame: # main gui that opens when program is run
         self.new_window = None # initialise the new window creation so we can call it in pull() and pull_error_window()
         
         '''for history window''' # this is the instance of the history window
-        global history_window_instance # Declare intent to modify the global variable
-        history_window_instance = None # initially there is no window
+        self.history_window_instance = None # variable that stores the object
+        self.history_window_open = False # boolean that says if its open or not
         
         # open and load the list in the json into variable named self.data
         with open("history.json") as f:
             self.data = json.load(f)               
         
         '''LEFT SIDE PANEL'''
-        left_panel = Frame(root, bg='black', width=300)
+        left_panel = Frame(self, bg='black', width=300)
         left_panel.pack(side='left', fill='y')
         
         # banner select label
@@ -96,7 +103,7 @@ class main_frame: # main gui that opens when program is run
         self.button_history.pack(side='bottom', padx=20, pady=20)
         
         '''RIGHT SIDE PANEL'''
-        self.right_panel = Frame(root, bg='lightcoral', width=980, height=720)
+        self.right_panel = Frame(self, bg='lightcoral', width=980, height=720)
         self.right_panel.pack(side='left', fill='both', expand=True)
         
         # black heading bar to store banner name and current currency
@@ -240,6 +247,9 @@ class main_frame: # main gui that opens when program is run
                     self.err_window_creation = False
                     self.new_window.destroy() # destroy it
                 
+                if self.history_window_instance: # if history window exist
+                    self.on_history_window_close() # destroy window                 
+                
                 self.pull_append() # run the pulling method that does rate calculation
                 with open("history.json", "w") as f:
                     json.dump(self.data, f, indent=1) # append list to json for rewards frame
@@ -263,6 +273,9 @@ class main_frame: # main gui that opens when program is run
                     self.err_window_creation = False
                     self.new_window.destroy()
                 
+                if self.history_window_instance: # if history window exist
+                    self.on_history_window_close() # destroy window                    
+                
                 for i in range(0,10,1): # run rate calculation 10 times
                     self.pull_append()
                 with open('history.json', 'w') as f: # append to json
@@ -279,7 +292,7 @@ class main_frame: # main gui that opens when program is run
     def pull_error_window(self):
         '''error window that shows when you don't have enough gems to afford a
         pull, credit to: https://www.geeksforgeeks.org/python/open-a-new-window-with-a-button-in-python-tkinter/'''
-        self.new_window = Toplevel(root) # Create a new window
+        self.new_window = Toplevel(self) # Create a new window
         self.new_window.title("Currency Error")
         self.new_window.geometry('250x150')
         
@@ -287,41 +300,51 @@ class main_frame: # main gui that opens when program is run
     
     def open_history_window(self):
         '''Create an instance of the history_frame class'''
-        print(history_window_instance)
-        if history_window_instance is None: # if history window doesn't already exist
+        if not self.history_window_instance: # if history window doesn't already exist
             self.history_window_creator()
-        print(f"{history_window_instance} + hi")
+        else:
+            self.on_history_window_close() # destroy window
+            self.history_window_creator() # reopen the window
     
     def history_window_creator(self):
-        top = Toplevel(root) # create the toplevel container
-        history_window_instance = history_frame(top) # create the window's instance
-        print(f"Variable changed to: {history_window_instance}")        
-        top.mainloop() # run the window
-
-class history_frame: # history gui window that opens when history button is pressed
+        self.history_window_instance = history_frame(self) # create the window's instance
+        self.history_window_open = True # set boolean to true now that window is open
+        '''source: https://www.reddit.com/r/Tkinter/comments/vrxzuz/i_dont_understand_how_protocolwm_delete_window/'''
+        # protocol sets it so when history_frame is closed, it replaces its own close window method with the on_history_window_close method from main_frame class
+        self.history_window_instance.protocol("WM_DELETE_WINDOW", self.on_history_window_close)
     
-    def __init__(self, top):
+    def on_history_window_close(self): # when history_frame is closed
+        self.history_window_open = False # set the variable ot false
+        if self.history_window_instance: # if the instance is open (it will be open)
+            self.history_window_instance.destroy() # destroy window
+            self.history_window_instance = None # set object to none
+
+"""history gui window that opens when history button is pressed"""
+class history_frame(Toplevel): # toplevel is used here instead of tk as that is the tkinter module for opening an extra window
+    
+    def __init__(self, parent):
         '''Initialisation method'''
-        self.top = top
-        top.title("History Window")
-        top.geometry("1280x720") # set the dimensions of the window
-        top.resizable(0,0) # make the window not resizeable
-        top.configure(bg='black') # set the background colour
+        '''source for learning how to make a parent class open child class:
+        https://python-forum.io/thread-32514.html'''
+        # parent parameter is used to refer to parameter self that is passed from main-frame method
+        # history_window_creator(self) in code self.history_window_instance = history_frame(self)
+        super().__init__(parent)
+        self.title("History Window")
+        self.geometry("1280x720") # set the dimensions of the window
+        self.resizable(0,0) # make the window not resizeable
+        self.configure(bg='black') # set the background colour
         
         # instantiating variables
         self.current_banner = 1 # which banner the GUI needs to get info for (for version 2)
         self.current_page = 0 # the current page that the history gui is on
         self.pull_info = [] # list that stores pages and each page's info
         
-        # Bind the on_closing method to the window close event
-        top.protocol("WM_DELETE_WINDOW", self.on_closing)
-        
         # store pulling information dictionary in variable self.data
         with open("history.json") as f:
             self.data = json.load(f)
         
         '''TOP SIDE PANEL'''
-        top_panel = Frame(top, bg='black', height=90)
+        top_panel = Frame(self, bg='black', height=90)
         top_panel.pack(side='top', fill='x')
         
         # current banner label
@@ -331,7 +354,7 @@ class history_frame: # history gui window that opens when history button is pres
         self.label_current_banner.pack(pady=20)
         
         '''MIDDLE PANEL'''
-        self.middle_panel = Frame(top, bg='black', height=470,
+        self.middle_panel = Frame(self, bg='black', height=470,
                              highlightbackground='white', highlightthickness=2)
         self.middle_panel.pack(side='top', fill='x', padx=35, pady=25)
         
@@ -346,7 +369,7 @@ class history_frame: # history gui window that opens when history button is pres
             self.entries.append(entry) # add this label to the list
         
         '''PAGE BUTTON PANEL'''
-        page_frame = Frame(top, bg='black')
+        page_frame = Frame(self, bg='black')
         page_frame.pack(pady=20)
         
         self.prev_button = Button(page_frame, text='<-- Previous', font=('Arial',14),
@@ -433,12 +456,7 @@ class history_frame: # history gui window that opens when history button is pres
             self.current_page += 1 # add page by 1
             self.page_label.config(text=f"Page {self.current_page + 1}") # update label
             self.update_display() # update labels in center
-    
-    def on_closing(self):
-        history_window_instance = None
-        print(f"Variable changed to: {history_window_instance}")
-        self.top.destroy()
 
-root = Tk() # establish the root of the window
-app = main_frame(root) # create the app object using class converter
-root.mainloop() # run/create the window
+if __name__ == "__main__":
+    app = main_frame()
+    app.mainloop()
