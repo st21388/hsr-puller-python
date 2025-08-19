@@ -195,9 +195,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.ten_labels[f"label{z+8}"].grid(row=2, column=z+1, sticky='nswe')
         
         Button(self.ten_frame, text="Back", command=lambda: self.show_frame('main-gui')).grid(row=2, column=0)
-        
-        print(self.ten_labels)
-        
+
         # initially show main-gui frame
         self.show_frame('main-gui')
     
