@@ -48,8 +48,40 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         with open("history.json") as f:
             self.data = json.load(f)               
         
+        '''for rewards frame'''
+        # configure the root window to take up the space of the whole window, so frames also do that
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        
+        # place the entire gui in a grid, so we can pull up reward frame when pull button is pressed
+        self.gui_frame = Frame(self, bg='black')
+        
+        # create the other frames
+        self.single_frame = Frame(self, bg='black')
+        self.ten_frame = Frame(self, bg='black')
+        
+        # place the frames in grids
+        self.gui_frame.grid(row=0, column=0, sticky='nswe')
+        
+        # configure size of single_frame row and column
+        # 1280/3=426.67, 720/3=240 going to be 3x3 because only 1 box
+        self.single_frame.grid(row=0, column=0, sticky='nsew')
+        for i in range(3):
+            self.single_frame.grid_rowconfigure(i, weight=0, minsize=240)
+        for i in range(4):
+            self.single_frame.grid_columnconfigure(i, weight=0, minsize=426.67)        
+        
+        # configure the size of ten_frame row and column
+        # 1280/4=320, 720/3=240 because 4 boxes horizontal, 3 boxes vertical
+        self.ten_frame.grid(row=0, column=0, sticky='nswe')
+        for i in range(3):
+            self.ten_frame.grid_rowconfigure(i, weight=0, minsize=240)
+        for i in range(4):
+            self.ten_frame.grid_columnconfigure(i, weight=0, minsize=320)
+        
+        # add content for the main-gui        
         '''LEFT SIDE PANEL'''
-        left_panel = Frame(self, bg='black', width=300)
+        left_panel = Frame(self.gui_frame, bg='black', width=300)
         left_panel.pack(side='left', fill='y')
         
         # banner select label
@@ -103,7 +135,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         self.button_history.pack(side='bottom', padx=20, pady=20)
         
         '''RIGHT SIDE PANEL'''
-        self.right_panel = Frame(self, bg='lightcoral', width=980, height=720)
+        self.right_panel = Frame(self.gui_frame, bg='lightcoral', width=980, height=720)
         self.right_panel.pack(side='left', fill='both', expand=True)
         
         # black heading bar to store banner name and current currency
@@ -137,7 +169,76 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         button_ten = Button(self.pull_frame, text="10x\n1600 gems", width=10, height=2,
                             command=lambda: self.pull('ten'))
         button_ten.pack(side="left", padx=20)
+        
+        '''PULLING FRAMES'''        
+        # add content to single_frame
+        self.single_label = Label(self.single_frame) # create the label
+        self.single_label.grid(row=1, column=1, sticky='nswe', padx=67) # pack it in the a grid
+        self.update_single_frame() # add information to the label
+                
+        Button(self.single_frame, text="Back", # add a back button
+               command=lambda: self.show_frame('main-gui')).grid(row=2, column=1)
+        
+        # add content to ten_frame        
+        self.ten_labels = {}
+        i = 0
+        for x in range(0,2,1): # first 2 rows
+            for y in range(0,4,1): # each column (4 columns)
+                # create the label
+                self.ten_labels[f"label{i}"] = Label(self.ten_frame)
+                # pack it in a grid
+                self.ten_labels[f"label{i}"].grid(row=x, column=y, sticky='nsew')
+                i+=1 # increment i by 1
+        
+        for z in range(0,2,1): # last row two columns
+            self.ten_labels[f"label{z+8}"] = Label(self.ten_frame)
+            self.ten_labels[f"label{z+8}"].grid(row=2, column=z+1, sticky='nswe')
+        
+        Button(self.ten_frame, text="Back", command=lambda: self.show_frame('main-gui')).grid(row=2, column=0)
+        
+        print(self.ten_labels)
+        
+        # initially show main-gui frame
+        self.show_frame('main-gui')
     
+    def update_single_frame(self):
+        '''method to update single pull frame with latest info from json file'''
+        # add content to single_frame
+        if self.data['history'][-1][0] == 3: # 3 star
+            self.single_label.config(text ='3 star', bg='lightblue')
+        elif self.data['history'][-1][0] == 4: # 4 star
+            self.single_label.config(text='4 star', bg='#CBC3E3')
+        elif self.data['history'][-1][0] == 5: # 5 star
+            self.single_label.config(text='5 star', bg='yellow')
+    
+    def update_ten_frame(self):
+        '''method to update ten pull frame with latest info from json file'''
+        # add content to ten_frame
+        past_ten = []
+        for i in range(0,11,1): # for 11 times (because the first one is 0, so we discard it)
+            if i > 0: # don't include the first pull that's in the list
+                past_ten.append(self.data['history'][-i][0]) # append to list
+                past_ten.reverse() # reverse the list so instead of last->first it goes first->last        
+        
+        z = 0 # create another variable z to represent which number item in the array it is in [0,1,2,3,4,5,6,7,8,9]
+        for i in range(0,10,1):
+            if past_ten[z] == 3: # 3 star
+                self.ten_labels[f"label{i}"].config(text='3 star', bg='lightblue')
+            elif past_ten[z] == 4: # 4 star
+                self.ten_labels[f"label{i}"].config(text='4 star', bg='#CBC3E3')
+            elif past_ten[z] == 5: # 5 star
+                self.ten_labels[f"label{i}"].config(text= '5 star', bg='yellow')
+            z+=1 # increment z's count by 1
+    
+    def show_frame(self, frame_choice):
+        '''method to put the selected frame on the top of the window'''
+        if frame_choice == 'main-gui': # original name was button, decided to keep as that
+            self.gui_frame.tkraise()
+        elif frame_choice == 'single':
+            self.single_frame.tkraise()
+        elif frame_choice == 'ten':
+            self.ten_frame.tkraise()
+        
     def banner_one(self): # display banner 1
         self.current_banner = 1 # change the variable to the current banner
         self.right_panel.config(bg='blue') # change bg
@@ -254,6 +355,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 with open("history.json", "w") as f:
                     json.dump(self.data, f, indent=1) # append list to json for rewards frame
                 
+                self.update_single_frame() # update the frame with latest info
+                self.show_frame('single') # tkraise() the single pull frame
+                
             else: # cannot afford 160 gems
                 if self.err_window_creation == False: # if window doesn't exist
                     self.err_window_creation = True # set to true
@@ -265,6 +369,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                     the old one which could be under another window.'''
                     self.new_window.destroy() # destroy old window
                     self.pull_error_window() # create new one
+        
         elif option == "ten":
             if int(self.varLabel_currency.cget('text')) >= 1600: # if able to afford 1600 gems
                 calculation = int(self.varLabel_currency.cget('text')) - 1600
@@ -280,6 +385,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                     self.pull_append()
                 with open('history.json', 'w') as f: # append to json
                     json.dump(self.data, f, indent=1)
+                
+                self.update_ten_frame() # update the list to show newer information
+                self.show_frame('ten') # tkraise() the ten pull frame
             
             else: # cannot afford 1600 gems
                 if self.err_window_creation == False:
@@ -460,3 +568,5 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
 if __name__ == "__main__":
     app = main_frame()
     app.mainloop()
+
+
