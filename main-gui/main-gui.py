@@ -194,7 +194,8 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.ten_labels[f"label{z+8}"] = Label(self.ten_frame)
             self.ten_labels[f"label{z+8}"].grid(row=2, column=z+1, sticky='nswe')
         
-        Button(self.ten_frame, text="Back", command=lambda: self.show_frame('main-gui')).grid(row=2, column=0)
+        Button(self.ten_frame, text="Back",
+               command=lambda: self.show_frame('main-gui')).grid(row=2, column=0)
 
         # initially show main-gui frame
         self.show_frame('main-gui')
@@ -216,7 +217,8 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         for i in range(0,11,1): # for 11 times (because the first one is 0, so we discard it)
             if i > 0: # don't include the first pull that's in the list
                 past_ten.append(self.data['history'][-i][0]) # append to list
-                past_ten.reverse() # reverse the list so instead of last->first it goes first->last        
+        
+        past_ten.reverse() # reverse the list so instead of last->first it goes first->last        
         
         z = 0 # create another variable z to represent which number item in the array it is in [0,1,2,3,4,5,6,7,8,9]
         for i in range(0,10,1):
@@ -566,5 +568,3 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
 if __name__ == "__main__":
     app = main_frame()
     app.mainloop()
-
-
