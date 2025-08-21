@@ -114,36 +114,45 @@ class history_frame:
         self.update_display() # add content to the display
         
     def update_display(self):
-        pulls = pull_info[self.current_page] # get the current page's pulls to display
-        
-        '''going through the pulls array, enumerate each indice to store
-        (rarity, pity5, pity4) and ...... add more comments and info'''
-        for i, (rarity, pity5, pity4) in enumerate(pulls): # for every pull (loops ten times unless last page doesn't have 10)
-            if rarity==5: # 5*=yellow, 4*=purple, 3*=blue
-                colour = "yellow"
-            elif rarity==4:
-                colour = "#CBC3E3"
-            else:
-                colour = "lightblue"
-            self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
-                text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
-                bg=colour)
-        
-            if ones > 0 and (self.current_page + 1) == len(pull_info): # if it is the last page and the total number of pulls done is not a multiple of 10
-                # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
-                for i in range(ones, 10, 1):
-                    self.entries[i].configure(
-                        bg='black')
-        
-        if self.current_page == 0: # if first page, disable prev, enable next
-            self.prev_button.config(state='disabled')
-            self.next_button.config(state='normal')
-        elif (self.current_page + 1) == len(pull_info): # if last page, enable prev, disable next
-            self.prev_button.config(state='normal')
+        if len(pull_info) == 0: # if there is no pull history
+            for i in range(0, 10, 1): # repeat 10 times
+                self.entries[i].configure(bg='black') # make blank entries
+            # text to show no pulls have been made yet
+            self.entries[0].configure(text="No pulls currently made on this banner.",
+                                      fg='white', bg='black', font=("Arial", 19, "bold"))
+            self.prev_button.config(state='disabled') # disable the buttons
             self.next_button.config(state='disabled')
-        else: # if not first or last, enable both
-            self.prev_button.config(state='normal')
-            self.next_button.config(state='normal')
+        else:
+            pulls = pull_info[self.current_page] # get the current page's pulls to display
+            
+            '''going through the pulls array, enumerate each indice to store
+            (rarity, pity5, pity4) and ...... add more comments and info'''
+            for i, (rarity, pity5, pity4) in enumerate(pulls): # for every pull (loops ten times unless last page doesn't have 10)
+                if rarity==5: # 5*=yellow, 4*=purple, 3*=blue
+                    colour = "yellow"
+                elif rarity==4:
+                    colour = "#CBC3E3"
+                else:
+                    colour = "lightblue"
+                self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
+                    text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
+                    bg=colour)
+            
+                if ones > 0 and (self.current_page + 1) == len(pull_info): # if it is the last page and the total number of pulls done is not a multiple of 10
+                    # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
+                    for i in range(ones, 10, 1):
+                        self.entries[i].configure(
+                            bg='black')
+        
+            if self.current_page == 0: # if first page, disable prev, enable next
+                self.prev_button.config(state='disabled')
+                self.next_button.config(state='normal')
+            elif (self.current_page + 1) == len(pull_info): # if last page, enable prev, disable next
+                self.prev_button.config(state='normal')
+                self.next_button.config(state='disabled')
+            else: # if not first or last, enable both
+                self.prev_button.config(state='normal')
+                self.next_button.config(state='normal')
     
     def prev_page(self): # button for previous page
         if (self.current_page + 1) > 1: # if not at first page
