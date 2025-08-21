@@ -10,6 +10,12 @@ Changes the way the program grabs from the json file. Since the json file
 changed to store lists instead of single numbers in the history list, this
 program looks for index[0] of the items in that list. This is so that it only
 gets the rarities of the items.
+
+Component 3: Version 3:
+Is modified to work with version 3 of component 1 - calculator. Version 3 of that
+component has a modified json file to include what is the current banner. This
+program will also hold a variable for the current banner and it will display the
+appropriate information from that banner.
 """
 from tkinter import *
 import json
@@ -22,6 +28,14 @@ class reward_frame:
         root.title("Reward Frame")
         root.geometry("1280x720") # set the dimensions of the window
         root.resizable(0,0) # make the window not resizeable
+        
+        # initialising instance variables
+        
+        # load the information (dictionary) in the json and place it in a variable
+        with open("history.json") as f:
+            data = json.load(f)
+        
+        self.current_banner = data["banner"]
         
         #configure the root window to take up the space of the whole window so the frames also do that
         root.grid_rowconfigure(0, weight=1)
@@ -59,18 +73,14 @@ class reward_frame:
                             command=lambda: self.show_frame('ten'))
         button_ten.pack(padx=20)
         
-        # load the information (dictionary) in the json and place it in a variable
-        with open("history.json") as f:
-            data = json.load(f)        
-        
         # Add content to single_frame
-        if data['history'][-1][0] == 3: # 3 star
+        if data[self.current_banner]['history'][-1][0] == 3: # 3 star
             Label(self.single_frame, text='3 star',
                   bg='lightblue').grid(row=1, column=1, sticky='nswe', padx=67)
-        elif data['history'][-1][0] == 4: # 4 star
+        elif data[self.current_banner]['history'][-1][0] == 4: # 4 star
             Label(self.single_frame, text='4 star',
                   bg='#CBC3E3').grid(row=1, column=1, sticky='nswe', padx=67)
-        elif data['history'][-1][0] == 5: # 5 star
+        elif data[self.current_banner]['history'][-1][0] == 5: # 5 star
             Label(self.single_frame, text='5 star',
                   bg='yellow').grid(row=1, column=1, sticky='nswe', padx=67)
         
@@ -81,7 +91,7 @@ class reward_frame:
         past_ten = [] # create an empty list
         for i in range(0,11,1): # for 11 times (because the first one is 0, so we discard it)
             if i > 0: # don't include the first pull that's in the list
-                past_ten.append(data['history'][-i][0]) # append to list
+                past_ten.append(data[self.current_banner]['history'][-i][0]) # append to list
         past_ten.reverse() # reverse the list so instead of last->first it goes first->last
 
         z = 0 # create another variable z to represent which number item in the array it is in [0,1,2,3,4,5,6,7,8,9]
