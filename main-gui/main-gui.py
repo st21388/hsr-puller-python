@@ -9,6 +9,12 @@ Component 2: Version 2:
 After completing every single component's version two, add those components to
 this main gui and make the program functional. The updated json will also be
 used and stored with this program's file.
+
+Component 2: Version 3:
+After c1-v3, the json file has been modified to consider the history of pulling
+on different banners. c2-v3 has been modified to have functionality with this
+new json and has updated components to function with the format of this new
+json.
 """
 
 from tkinter import *
@@ -37,7 +43,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         self.current_banner = 0 # which banner the GUI is currently on
         
         '''for pull error window'''
-        self.err_window_creation = False # does an error window currently exist? for the pull() and pull_error_window() methods
+        self.currency_err_window_creation = False # does a currency error window currently exist? for the pull() and pull_error_window() methods
+        self.pull_err_window_creation = False # same as currency but for when no banner has been selected and pull is clicked
+        self.history_err_window_creation = False # same as currency but for when no banner has been selected and history is clicked
         self.new_window = None # initialise the new window creation so we can call it in pull() and pull_error_window()
         
         '''for history window''' # this is the instance of the history window
@@ -203,11 +211,13 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
     def update_single_frame(self):
         '''method to update single pull frame with latest info from json file'''
         # add content to single_frame
-        if self.data['history'][-1][0] == 3: # 3 star
+        if self.current_banner == 0: # hasn't selected banner yet
+            self.single_label.config(bg='black')
+        elif self.data[self.current_banner]['history'][-1][0] == 3: # 3 star
             self.single_label.config(text ='3 star', bg='lightblue')
-        elif self.data['history'][-1][0] == 4: # 4 star
+        elif self.data[self.current_banner]['history'][-1][0] == 4: # 4 star
             self.single_label.config(text='4 star', bg='#CBC3E3')
-        elif self.data['history'][-1][0] == 5: # 5 star
+        elif self.data[self.current_banner]['history'][-1][0] == 5: # 5 star
             self.single_label.config(text='5 star', bg='yellow')
     
     def update_ten_frame(self):
@@ -216,7 +226,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         past_ten = []
         for i in range(0,11,1): # for 11 times (because the first one is 0, so we discard it)
             if i > 0: # don't include the first pull that's in the list
-                past_ten.append(self.data['history'][-i][0]) # append to list
+                past_ten.append(self.data[self.current_banner]['history'][-i][0]) # append to list
         
         past_ten.reverse() # reverse the list so instead of last->first it goes first->last        
         
@@ -240,13 +250,15 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.ten_frame.tkraise()
         
     def banner_one(self): # display banner 1
-        self.current_banner = 1 # change the variable to the current banner
+        self.data['banner'] = 1 # change the variable in the json to the current banner
+        self.current_banner = 1 # change the variable in the python program
         self.right_panel.config(bg='blue') # change bg
         self.label_banner.config(text="Banner 1") # change title text
         self.pull_frame.config(bg='blue') # change pull button's bg
         self.label_banner_content.config(text="CharArt 1", bg='blue') # change img of char (right now just placeholder text)
 
     def banner_two(self): # display banner 2
+        self.data['banner'] = 2
         self.current_banner = 2
         self.right_panel.config(bg='green')
         self.label_banner.config(text="Banner 2")
@@ -254,6 +266,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         self.label_banner_content.config(text="CharArt 2", bg='green')
         
     def banner_three(self): # display banner 3
+        self.data['banner'] = 3
         self.current_banner = 3
         self.right_panel.config(bg='yellow')
         self.label_banner.config(text="Banner 3")
@@ -309,43 +322,54 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         elif (rate_five*100) > random.uniform(0.0,100.0):
             return "5"
         elif (rate_four*100) > random.uniform(0.0,100.0):
-            return "4"    
+            return "4"
     
     def pull_append(self): # function for pulling
-        self.data["warp_4"] += 1 # increment 4 & 5 star pity count by 1
-        self.data["warp_5"] += 1
-        rate_4 = self.get_rate_4_star(self.data["warp_4"]) # calculate the rates
-        rate_5 = self.get_rate_5_star(self.data["warp_5"])
+        self.data[self.current_banner]["warp_4"] += 1 # increment 4 & 5 star pity count by 1
+        self.data[self.current_banner]["warp_5"] += 1
+        rate_4 = self.get_rate_4_star(self.data[self.current_banner]["warp_4"]) # calculate the rates
+        rate_5 = self.get_rate_5_star(self.data[self.current_banner]["warp_5"])
         
         outcome = self.roll(rate_4,rate_5) # roll the dice
         if outcome == "5&4": # if both 5 and 4 star win, discard 4 star
             '''append self.data as (rarity, 5* pity, 4* pity)'''
-            self.data["history"].append([5,self.data["warp_5"],self.data["warp_4"]])
-            self.data["warp_5"] = 0
-            self.data["warp_4"] = 0
+            self.data[self.current_banner]["history"].append([5,
+                                                              self.data[self.current_banner]["warp_5"],
+                                                              self.data[self.current_banner]["warp_4"]])
+            self.data[self.current_banner]["warp_5"] = 0
+            self.data[self.current_banner]["warp_4"] = 0
         elif outcome == "5": # if 5 star win, reset 5* pity not 4 star
-            self.data["history"].append([5,self.data["warp_5"],self.data["warp_4"]])
-            self.data["warp_5"] = 0
+            self.data[self.current_banner]["history"].append([5,
+                                         self.data[self.current_banner]["warp_5"],
+                                         self.data[self.current_banner]["warp_4"]])
+            self.data[self.current_banner]["warp_5"] = 0
         elif outcome == "4": # if 4 star win, reset 4* pity not 5 star
-            self.data["history"].append([4,self.data["warp_5"],self.data["warp_4"]])
-            self.data["warp_4"] = 0
+            self.data[self.current_banner]["history"].append([4,
+                                                              self.data[self.current_banner]["warp_5"],
+                                                              self.data[self.current_banner]["warp_4"]])
+            self.data[self.current_banner]["warp_4"] = 0
         else: # else, then 3 star was won
-            self.data["history"].append([3,self.data["warp_5"],self.data["warp_4"]])
+            self.data[self.current_banner]["history"].append([3,
+                                                              self.data[self.current_banner]["warp_5"],
+                                                              self.data[self.current_banner]["warp_4"]])
         
         if len(self.data["history"]) == 301:
-            self.data["history"].pop(0) # history can not store over 300 pulls
+            self.data[self.current_banner]["history"].pop(0) # history can not store over 300 pulls
     
     def pull(self, option):
         '''runs when the pull buttons are pressed (in future versions, this will
         change to the pull frame as well as subtract currency'''
-        err_window_creation = False # set a boolean to determine if the error window exists (so that multiple windows don't just exist if the user spams the button)
+        currency_err_window_creation = False # set a boolean to determine if the error window exists (so that multiple windows don't just exist if the user spams the button)
         
-        if option == "single": # if single pull button pressed
+        if self.current_banner == 0: # if a banner has not been selected
+            pass
+        
+        elif option == "single": # if single pull button pressed
             if int(self.varLabel_currency.cget('text')) >= 160: # if able to afford 160 gems
                 calculation = int(self.varLabel_currency.cget("text")) - 160 # calculate current currency - 160
                 self.varLabel_currency.config(text=str(calculation)) # update currency
-                if self.err_window_creation == True: # if err_window exists
-                    self.err_window_creation = False
+                if self.currency_err_window_creation == True: # if err_window exists
+                    self.currency_err_window_creation = False
                     self.new_window.destroy() # destroy it
                 
                 if self.history_window_instance: # if history window exist
@@ -359,8 +383,8 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 self.show_frame('single') # tkraise() the single pull frame
                 
             else: # cannot afford 160 gems
-                if self.err_window_creation == False: # if window doesn't exist
-                    self.err_window_creation = True # set to true
+                if self.currency_err_window_creation == False: # if window doesn't exist
+                    self.currency_err_window_creation = True # set to true
                     self.pull_error_window() # create err_window
                 else: # destroys old window and pulls up another new one
                     '''this is so that lots of windows don't clog up the pc screen,
@@ -374,8 +398,8 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             if int(self.varLabel_currency.cget('text')) >= 1600: # if able to afford 1600 gems
                 calculation = int(self.varLabel_currency.cget('text')) - 1600
                 self.varLabel_currency.config(text=str(calculation))
-                if self.err_window_creation == True:
-                    self.err_window_creation = False
+                if self.currency_err_window_creation == True:
+                    self.currency_err_window_creation = False
                     self.new_window.destroy()
                 
                 if self.history_window_instance: # if history window exist
@@ -390,8 +414,8 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 self.show_frame('ten') # tkraise() the ten pull frame
             
             else: # cannot afford 1600 gems
-                if self.err_window_creation == False:
-                    self.err_window_creation = True
+                if self.currency_err_window_creation == False:
+                    self.currency_err_window_creation = True
                     self.pull_error_window()
                 else:
                     self.new_window.destroy()
@@ -408,7 +432,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
     
     def open_history_window(self):
         '''Create an instance of the history_frame class'''
-        if not self.history_window_instance: # if history window doesn't already exist
+        if self.current_banner == 0: # if a banner has not been selected
+            pass
+        elif not self.history_window_instance: # if history window doesn't already exist
             self.history_window_creator()
         else:
             self.on_history_window_close() # destroy window
@@ -443,13 +469,14 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
         self.configure(bg='black') # set the background colour
         
         # instantiating variables
-        self.current_banner = 1 # which banner the GUI needs to get info for (for version 2)
+        
+        # load the information (dictionary) in the json and place it in a self.var
+        with open("history.json") as f:
+            self.data = json.load(f)        
+        
+        self.current_banner = self.data['bannner'] # which banner the GUI needs to get info for
         self.current_page = 0 # the current page that the history gui is on
         self.pull_info = [] # list that stores pages and each page's info
-        
-        # store pulling information dictionary in variable self.data
-        with open("history.json") as f:
-            self.data = json.load(f)
         
         '''TOP SIDE PANEL'''
         top_panel = Frame(self, bg='black', height=90)
@@ -457,7 +484,7 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
         
         # current banner label
         self.label_current_banner = Label(top_panel,
-                                          text= f"History - Banner {str(self.current_banner)}",
+                                          text= f"History - Banner {self.current_banner}",
                                           fg='white', bg='black', font=('Arial', 28))
         self.label_current_banner.pack(pady=20)
         
@@ -498,17 +525,19 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
     def load_info(self):
         '''organising information from json to a list. each array has 10 items,
         in each item is (rarity, 5* pity, 4* pity). Page 1 (index[0]) holds most
-        recent pulls.'''        
-        self.data['history'].reverse() # reverse info in the self.data history list so last pull appears as first
-        pages = (len(self.data['history'])//10) # if theres 78 pulls, this shows 7
-        self.ones = len(self.data['history']) - (pages*10) # if theres 78 pulls this shows 8
+        recent pulls.'''
+        self.data[self.current_banner]['history'].reverse() # reverse info in the self.data history list so last pull appears as first
+        pages = (len(self.data[self.current_banner]['history'])//10) # if theres 78 pulls, this shows 7
+        self.ones = len(self.data[self.current_banner]['history']) - (pages*10) # if theres 78 pulls this shows 8
         
         foo_list = [] # temporary list to store each page's info for the nested for loop below
         
-        z = 0 # create another variable z to represent the index of items in self.data['history']
+        z = 0 # create another variable z to represent the index of items in self.data[self.current_banner]['history']
         for x in range(1, (pages) + 1, 1): # looping for each page
             for y in range(1, 11, 1): # looping 10 times for 10 items in each page
-                temp = (self.data['history'][z][0], self.data['history'][z][1], self.data['history'][z][2])
+                temp = (self.data[self.current_banner]['history'][z][0],
+                        self.data[self.current_banner]['history'][z][1],
+                        self.data[self.current_banner]['history'][z][2])
                 foo_list.append(temp) # append self.data to foo_list
                 z += 1 # increment z by 1, moves to the next item; z is saved even when loop ends
             self.pull_info.append(foo_list) # append the page to pull_info
@@ -516,42 +545,53 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
         
         if self.ones > 0: # if there have been 10, 20, 30 pulls, self.ones would be 0 and every item would already be in the list
             for i in range(1, (self.ones) + 1, 1): # appending the last couple of items
-                temp = (self.data['history'][z][0], self.data['history'][z][1], self.data['history'][z][2])
+                temp = (self.data[self.current_banner]['history'][z][0],
+                        self.data[self.current_banner]['history'][z][1],
+                        self.data[self.current_banner]['history'][z][2])
                 foo_list.append(temp)
                 z+=1
             self.pull_info.append(foo_list)        
     
     def update_display(self):
-        pulls = self.pull_info[self.current_page] # get the current page's pulls to display
-        
-        '''going through the pulls array, enumerate each indice to store
-        (rarity, pity5, pity4) and ...... add more comments and info'''
-        for i, (rarity, pity5, pity4) in enumerate(pulls): # for every pull (loops ten times unless last page doesn't have 10)
-            if rarity==5: # 5*=yellow, 4*=purple, 3*=blue
-                colour = "yellow"
-            elif rarity==4:
-                colour = "#CBC3E3"
-            else:
-                colour = "lightblue"
-            self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
-                text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
-                bg=colour)
-        
-            if self.ones > 0 and (self.current_page + 1) == len(self.pull_info): # if it is the last page and the total number of pulls done is not a multiple of 10
-                # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
-                for i in range(self.ones, 10, 1):
-                    self.entries[i].configure(
-                        bg='black')
-        
-        if self.current_page == 0: # if first page, disable prev, enable next
-            self.prev_button.config(state='disabled')
-            self.next_button.config(state='normal')
-        elif (self.current_page + 1) == len(self.pull_info): # if last page, enable prev, disable next
-            self.prev_button.config(state='normal')
-            self.next_button.config(state='disabled')
-        else: # if not first or last, enable both
-            self.prev_button.config(state='normal')
-            self.next_button.config(state='normal')
+        if len(self.pull_info) == 0: # if there is no pull history
+            for i in range(0, 10, 1): # repeat 10 times
+                self.entries[i].configure(bg='black') # make blank entries
+            # text to show no pulls have been made yet
+            self.entries[0].configure(text="No pulls currently made on this banner.",
+                                      fg='white', bg='black', font=("Arial", 19, "bold"))
+            self.prev_button.config(state='disabled') # disable the buttons
+            self.next_button.config(state='disabled')        
+        else: # if there is pull history for the current banner
+            pulls = self.pull_info[self.current_page] # get the current page's pulls to display
+            
+            '''going through the pulls array, enumerate each indice to store
+            (rarity, pity5, pity4) and ...... add more comments and info'''
+            for i, (rarity, pity5, pity4) in enumerate(pulls): # for every pull (loops ten times unless last page doesn't have 10)
+                if rarity==5: # 5*=yellow, 4*=purple, 3*=blue
+                    colour = "yellow"
+                elif rarity==4:
+                    colour = "#CBC3E3"
+                else:
+                    colour = "lightblue"
+                self.entries[i].configure( # update the corresponding entry (1, 2, 3, 4...) to store the correct info
+                    text=f"{rarity}      5* Pity: {pity5} | 4* Pity: {pity4}",
+                    bg=colour)
+            
+                if self.ones > 0 and (self.current_page + 1) == len(self.pull_info): # if it is the last page and the total number of pulls done is not a multiple of 10
+                    # make the remaining entries blank (if there is 78 pulls, this will loop 2 times and the last 2 entries will be black)
+                    for i in range(self.ones, 10, 1):
+                        self.entries[i].configure(
+                            bg='black')
+            
+            if self.current_page == 0: # if first page, disable prev, enable next
+                self.prev_button.config(state='disabled')
+                self.next_button.config(state='normal')
+            elif (self.current_page + 1) == len(self.pull_info): # if last page, enable prev, disable next
+                self.prev_button.config(state='normal')
+                self.next_button.config(state='disabled')
+            else: # if not first or last, enable both
+                self.prev_button.config(state='normal')
+                self.next_button.config(state='normal')
     
     def prev_page(self): # button for previous page
         if (self.current_page + 1) > 1: # if not at first page
