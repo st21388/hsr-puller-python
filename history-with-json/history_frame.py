@@ -11,6 +11,12 @@ Component 4: Version 2:
 Instead of using placeholder data, the json has been updated to store pity in
 the list like the json, this version just works with the new json by not calling
 the placeholder list whenever grabbing rarity and pull pity data.
+
+Component 4: Version 3:
+The program is modified to read from the new json format introduced in component
+1 version 3. The program will accurately show which banner it is reading history
+from in the title (E.g, Banner 1, Banner 2 or Banner 3) and also display the
+correct information from that banner.
 """
 from tkinter import *
 import json
@@ -22,9 +28,11 @@ each array has 10 items, in each item is (rarity, 5* pity, 4* pity). Page 1
 with open("history.json") as f:
     data = json.load(f)
 
-data['history'].reverse() # reverse info in the data history list so last pull appears as first
-pages = (len(data['history'])//10) # if theres 78 pulls, this shows 7
-ones = len(data['history']) - (pages*10) # if theres 78 pulls this shows 8
+curr_banner = data['banner']
+
+data[curr_banner]['history'].reverse() # reverse info in the data history list so last pull appears as first
+pages = (len(data[curr_banner]['history'])//10) # if theres 78 pulls, this shows 7
+ones = len(data[curr_banner]['history']) - (pages*10) # if theres 78 pulls this shows 8
 
 pull_info = [] # list that stores pages and each page's info
 foo_list = [] # temporary list to store each page's info for the nested for loop below
@@ -32,7 +40,9 @@ foo_list = [] # temporary list to store each page's info for the nested for loop
 z = 0 # create another variable z to represent the index of items in data['history']
 for x in range(1, (pages) + 1, 1): # looping for each page
     for y in range(1, 11, 1): # looping 10 times for 10 items in each page
-        temp = (data['history'][z][0], data['history'][z][1], data['history'][z][2])
+        temp = (data[curr_banner]['history'][z][0],
+                data[curr_banner]['history'][z][1],
+                data[curr_banner]['history'][z][2]) # temporary variable to store information to append
         foo_list.append(temp) # append data to foo_list
         z += 1 # increment z by 1, moves to the next item; z is saved even when loop ends
     pull_info.append(foo_list) # append the page to pull_info
@@ -40,7 +50,9 @@ for x in range(1, (pages) + 1, 1): # looping for each page
 
 if ones > 0: # if there have been 10, 20, 30 pulls, ones would be 0 and every item would already be in the list
     for i in range(1, (ones) + 1, 1): # appending the last couple of items
-        temp = (data['history'][z][0], data['history'][z][1], data['history'][z][2])
+        temp = (data[curr_banner]['history'][z][0],
+                data[curr_banner]['history'][z][1],
+                data[curr_banner]['history'][z][2])
         foo_list.append(temp)
         z+=1
     pull_info.append(foo_list)
@@ -56,7 +68,6 @@ class history_frame:
         root.configure(bg='black') # set the background colour
         
         # instantiating variables
-        self.current_banner = 1 # which banner the GUI needs to get info for (for version 2)
         self.current_page = 0 # the current page that the history gui is on
         
         '''TOP SIDE PANEL'''
@@ -65,7 +76,7 @@ class history_frame:
         
         # current banner label
         self.label_current_banner = Label(top_panel,
-                                          text= f"History - Banner {str(self.current_banner)}",
+                                          text= f"History - Banner {curr_banner}",
                                           fg='white', bg='black', font=('Arial', 28))
         self.label_current_banner.pack(pady=20)
         
