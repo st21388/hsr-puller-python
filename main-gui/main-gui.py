@@ -42,11 +42,12 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         # instantiating variables
         self.current_banner = 0 # which banner the GUI is currently on
         
-        '''for pull error window'''
-        self.currency_err_window_creation = False # does a currency error window currently exist? for the pull() and pull_error_window() methods
-        self.pull_err_window_creation = False # same as currency but for when no banner has been selected and pull is clicked
-        self.history_err_window_creation = False # same as currency but for when no banner has been selected and history is clicked
+        '''for pull error windows'''
+        self.currency_error = False # is there currently a currency error?
+        self.banner_error = True # has the user selected a banner?
+        self.err_window_creation = False # does an error window currently exist? for the pull() and pull_error_window() methods
         self.new_window = None # initialise the new window creation so we can call it in pull() and pull_error_window()
+        self.error_type = 'banner' # what type of error is currently occuring?
         
         '''for history window''' # this is the instance of the history window
         self.history_window_instance = None # variable that stores the object
@@ -250,24 +251,33 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.ten_frame.tkraise()
         
     def banner_one(self): # display banner 1
-        self.data['banner'] = 1 # change the variable in the json to the current banner
-        self.current_banner = 1 # change the variable in the python program
+        self.data['banner'] = '1' # change the variable in the json to the current banner
+        with open('history.json', 'w') as f:
+            json.dump(self.data, f, indent=1) # dump this info into the json so that history window knows
+        
+        self.current_banner = self.data['banner'] # change the variable in the python program
         self.right_panel.config(bg='blue') # change bg
         self.label_banner.config(text="Banner 1") # change title text
         self.pull_frame.config(bg='blue') # change pull button's bg
         self.label_banner_content.config(text="CharArt 1", bg='blue') # change img of char (right now just placeholder text)
 
     def banner_two(self): # display banner 2
-        self.data['banner'] = 2
-        self.current_banner = 2
+        self.data['banner'] = '2'
+        with open('history.json', 'w') as f:
+            json.dump(self.data, f, indent=1)
+        
+        self.current_banner = self.data['banner']
         self.right_panel.config(bg='green')
         self.label_banner.config(text="Banner 2")
         self.pull_frame.config(bg='green')
         self.label_banner_content.config(text="CharArt 2", bg='green')
         
     def banner_three(self): # display banner 3
-        self.data['banner'] = 3
-        self.current_banner = 3
+        self.data['banner'] = '3'
+        with open('history.json', 'w') as f:
+            json.dump(self.data, f, indent=1)        
+        
+        self.current_banner = self.data['banner']
         self.right_panel.config(bg='yellow')
         self.label_banner.config(text="Banner 3")
         self.pull_frame.config(bg='yellow')
@@ -353,27 +363,37 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                                                               self.data[self.current_banner]["warp_5"],
                                                               self.data[self.current_banner]["warp_4"]])
         
-        if len(self.data["history"]) == 301:
+        if len(self.data[self.current_banner]["history"]) == 301:
             self.data[self.current_banner]["history"].pop(0) # history can not store over 300 pulls
     
     def pull(self, option):
         '''runs when the pull buttons are pressed (in future versions, this will
         change to the pull frame as well as subtract currency'''
-        currency_err_window_creation = False # set a boolean to determine if the error window exists (so that multiple windows don't just exist if the user spams the button)
+        err_window_creation = False # set a boolean to determine if the error window exists (so that multiple windows don't just exist if the user spams the button)
         
         if self.current_banner == 0: # if a banner has not been selected
-            pass
+            self.error_type = 'banner'
+            if self.err_window_creation == False: # if error window doesn't exist
+                self.err_window_creation = True # set it to True
+                self.pull_error_window() # create err_window
+            else: # destroys old window and pulls up another new one
+                '''this is so that lots of windows don't clog up the pc screen,
+                destroying the old one and creating a new one helps to bring
+                the error message to the user's screen instead of just keeping
+                the old one which could be under another window.'''
+                self.new_window.destroy() # destroy old window
+                self.pull_error_window() # create new one
         
         elif option == "single": # if single pull button pressed
             if int(self.varLabel_currency.cget('text')) >= 160: # if able to afford 160 gems
                 calculation = int(self.varLabel_currency.cget("text")) - 160 # calculate current currency - 160
                 self.varLabel_currency.config(text=str(calculation)) # update currency
-                if self.currency_err_window_creation == True: # if err_window exists
-                    self.currency_err_window_creation = False
+                if self.err_window_creation == True: # if err_window exists
+                    self.err_window_creation = False
                     self.new_window.destroy() # destroy it
                 
                 if self.history_window_instance: # if history window exist
-                    self.on_history_window_close() # destroy window                 
+                    self.on_history_window_close() # destroy window
                 
                 self.pull_append() # run the pulling method that does rate calculation
                 with open("history.json", "w") as f:
@@ -383,23 +403,20 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 self.show_frame('single') # tkraise() the single pull frame
                 
             else: # cannot afford 160 gems
-                if self.currency_err_window_creation == False: # if window doesn't exist
-                    self.currency_err_window_creation = True # set to true
-                    self.pull_error_window() # create err_window
-                else: # destroys old window and pulls up another new one
-                    '''this is so that lots of windows don't clog up the pc screen,
-                    destroying the old one and creating a new one helps to bring
-                    the error message to the user's screen instead of just keeping
-                    the old one which could be under another window.'''
-                    self.new_window.destroy() # destroy old window
-                    self.pull_error_window() # create new one
+                self.error_type = 'currency'
+                if self.err_window_creation == False:
+                    self.err_window_creation = True
+                    self.pull_error_window()
+                else:
+                    self.new_window.destroy()
+                    self.pull_error_window()
         
         elif option == "ten":
             if int(self.varLabel_currency.cget('text')) >= 1600: # if able to afford 1600 gems
                 calculation = int(self.varLabel_currency.cget('text')) - 1600
                 self.varLabel_currency.config(text=str(calculation))
-                if self.currency_err_window_creation == True:
-                    self.currency_err_window_creation = False
+                if self.err_window_creation == True:
+                    self.err_window_creation = False
                     self.new_window.destroy()
                 
                 if self.history_window_instance: # if history window exist
@@ -414,26 +431,25 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 self.show_frame('ten') # tkraise() the ten pull frame
             
             else: # cannot afford 1600 gems
-                if self.currency_err_window_creation == False:
-                    self.currency_err_window_creation = True
+                self.error_type = 'currency'
+                if self.err_window_creation == False:
+                    self.err_window_creation = True
                     self.pull_error_window()
                 else:
                     self.new_window.destroy()
                     self.pull_error_window()
     
-    def pull_error_window(self):
-        '''error window that shows when you don't have enough gems to afford a
-        pull, credit to: https://www.geeksforgeeks.org/python/open-a-new-window-with-a-button-in-python-tkinter/'''
-        self.new_window = Toplevel(self) # Create a new window
-        self.new_window.title("Currency Error")
-        self.new_window.geometry('250x150')
-        
-        Label(self.new_window, text="Error, not enough currency to afford pull.").pack(pady=20)
-    
     def open_history_window(self):
         '''Create an instance of the history_frame class'''
         if self.current_banner == 0: # if a banner has not been selected
-            pass
+            if self.err_window_creation == False:
+                self.err_window_creation = True
+                self.pull_error_window()
+            
+            else:
+                self.new_window.destroy()
+                self.pull_error_window()
+        
         elif not self.history_window_instance: # if history window doesn't already exist
             self.history_window_creator()
         else:
@@ -451,7 +467,24 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         self.history_window_open = False # set the variable ot false
         if self.history_window_instance: # if the instance is open (it will be open)
             self.history_window_instance.destroy() # destroy window
-            self.history_window_instance = None # set object to none
+            self.history_window_instance = None # set object to none    
+    
+    def pull_error_window(self):
+        '''error window that shows when you don't have enough gems to afford a
+        pull, credit to: https://www.geeksforgeeks.org/python/open-a-new-window-with-a-button-in-python-tkinter/'''
+        if self.error_type == 'banner':
+            self.new_window = Toplevel(self) # Create a new window
+            self.new_window.title("Banner Error")
+            self.new_window.geometry('250x150')
+            
+            Label(self.new_window, text='Error, please select a banner first.').pack(pady=20)
+        
+        elif self.error_type == 'currency':
+            self.new_window = Toplevel(self)
+            self.new_window.title("Currency Error")
+            self.new_window.geometry('250x150')
+            
+            Label(self.new_window, text="Error, not enough currency to afford pull.").pack(pady=20)
 
 """history gui window that opens when history button is pressed"""
 class history_frame(Toplevel): # toplevel is used here instead of tk as that is the tkinter module for opening an extra window
@@ -474,7 +507,7 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
         with open("history.json") as f:
             self.data = json.load(f)        
         
-        self.current_banner = self.data['bannner'] # which banner the GUI needs to get info for
+        self.current_banner = self.data['banner'] # which banner the GUI needs to get info for
         self.current_page = 0 # the current page that the history gui is on
         self.pull_info = [] # list that stores pages and each page's info
         
