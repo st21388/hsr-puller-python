@@ -15,6 +15,14 @@ After c1-v3, the json file has been modified to consider the history of pulling
 on different banners. c2-v3 has been modified to have functionality with this
 new json and has updated components to function with the format of this new
 json.
+
+Component 2: Version 4:
+After user feedback and testing, updates have been made to the completed program.
+The details button now opens the details window. Spelling mistakes have been fixed.
+There is a cap for maximum currency. The sizing of buttons has been adjusted. There
+is an option to clear history for a banner in its respective history window. There
+is now a reset button for the currency widget. The history window shows the total
+number of pages as (page 1 of 4).
 """
 
 from tkinter import *
@@ -52,6 +60,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         '''for history window''' # this is the instance of the history window
         self.history_window_instance = None # variable that stores the object
         self.history_window_open = False # boolean that says if its open or not
+        
+        '''for details window''' # this is the instance of the details window
+        self.details_window_instance = None
         
         # open and load the list in the json into variable named self.data
         with open("history.json") as f:
@@ -106,7 +117,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                           command=lambda: self.banner_two())
         button_2.pack(pady=5)
         
-        button_3 = Button(left_panel, text="Banner 2", width=25,
+        button_3 = Button(left_panel, text="Banner 3", width=25,
                           command=lambda: self.banner_three())
         button_3.pack(pady=5)
         
@@ -129,17 +140,22 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         
         button_add_currency = Button(frame_currency, text="Add",
                                      command=lambda: self.calc_currency("add"))
-        button_add_currency.pack(padx=25, side="left")
+        button_add_currency.pack(padx=10, side="left")
+        
+        button_reset_currency = Button(frame_currency, text="Reset",
+                                       command=lambda: self.calc_currency("reset"))
+        button_reset_currency.pack(padx=10, side="left")
         
         button_subtract_currency = Button(frame_currency, text="Subtract",
                                           command=lambda: self.calc_currency("subtract"))
-        button_subtract_currency.pack(padx=25, side="right")
+        button_subtract_currency.pack(padx=10, side="right")
         
         # details and history buttons
-        button_details = Button(left_panel, text="Details", width=12)
+        button_details = Button(left_panel, text="Details", width=25,
+                                command=self.open_details_window)
         button_details.pack(side='bottom', padx=20, pady=20)
         
-        self.button_history = Button(left_panel, text="History", width=12,
+        self.button_history = Button(left_panel, text="History", width=25,
                                      command=self.open_history_window)
         self.button_history.pack(side='bottom', padx=20, pady=20)
         
@@ -251,6 +267,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.ten_frame.tkraise()
         
     def banner_one(self): # display banner 1
+        with open('history.json') as f: # update the json (because history-window might have changed something)
+            self.data = json.load(f)
+        
         self.data['banner'] = '1' # change the variable in the json to the current banner
         with open('history.json', 'w') as f:
             json.dump(self.data, f, indent=1) # dump this info into the json so that history window knows
@@ -262,6 +281,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         self.label_banner_content.config(text="CharArt 1", bg='blue') # change img of char (right now just placeholder text)
 
     def banner_two(self): # display banner 2
+        with open('history.json') as f:
+            self.data = json.load(f)
+        
         self.data['banner'] = '2'
         with open('history.json', 'w') as f:
             json.dump(self.data, f, indent=1)
@@ -273,6 +295,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         self.label_banner_content.config(text="CharArt 2", bg='green')
         
     def banner_three(self): # display banner 3
+        with open('history.json') as f:
+            self.data = json.load(f)        
+        
         self.data['banner'] = '3'
         with open('history.json', 'w') as f:
             json.dump(self.data, f, indent=1)        
@@ -292,10 +317,17 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                     raise ValueError # raise the error exception
                 
                 calculation = int(int(self.entry_currency.get()) + int(self.varLabel_currency.cget("text"))) # calculate entry + current_currency
-                self.varLabel_currency.config(text=str(calculation)) # replace current_currency with new currency
+                if calculation >= 9999999999:
+                    self.varLabel_currency.config(text='9999999999')
+                else:
+                    self.varLabel_currency.config(text=str(calculation)) # replace current_currency with new currency
                 self.label_currency_help.config(text="Enter an integer above 0.", bg='skyblue', width=20) # reset the help text
             except ValueError: # error exception
                 self.label_currency_help.config(text="Input must be an integer above 0.", bg="lightcoral", wraplength=160)
+        
+        if operation == "reset": # when pressing the reset button
+            self.varLabel_currency.config(text='0') # set the currency to 0
+            self.label_currency_help.config(text="Enter an integer above 0.", bg='skyblue', width=20) # reset the help text
         
         if operation == "subtract": # when pressing the subtract button
             try:
@@ -395,7 +427,11 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 if self.history_window_instance: # if history window exist
                     self.on_history_window_close() # destroy window
                 
-                self.pull_append() # run the pulling method that does rate calculation
+                with open('history.json') as f: # update data with info from the json in case history-window has changed anything
+                    self.data = json.load(f)
+                
+                self.pull_append() # run the pulling method that does rate calculation            
+                
                 with open("history.json", "w") as f:
                     json.dump(self.data, f, indent=1) # append list to json for rewards frame
                 
@@ -422,6 +458,9 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 if self.history_window_instance: # if history window exist
                     self.on_history_window_close() # destroy window                    
                 
+                with open('history.json') as f: # update data with info from the json in case history-window has changed anything
+                    self.data = json.load(f)                    
+                
                 for i in range(0,10,1): # run rate calculation 10 times
                     self.pull_append()
                 with open('history.json', 'w') as f: # append to json
@@ -438,6 +477,26 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
                 else:
                     self.new_window.destroy()
                     self.pull_error_window()
+    
+    def open_details_window(self):
+        '''Runs when the details button is pressed'''
+        if not self.details_window_instance: # if its not open
+            self.details_window_creator() # create the window
+        else: # if it already exists
+            self.on_details_window_close() # close the window
+            self.details_window_creator() # recreate it
+    
+    def details_window_creator(self):
+        '''create an instance of the details window class'''
+        self.details_window_instance = details_window(self) # create the instance
+        # when the window closes run the on_close() method
+        self.details_window_instance.protocol("WM_DELETE_WINDOW", self.on_details_window_close)
+    
+    def on_details_window_close(self):
+        '''method that runs when details window is closed'''
+        if self.details_window_instance: # if the window exists (it should if this method is run, just here for safety)
+            self.details_window_instance.destroy() # destroy the iwndow
+            self.details_window_instance = None # set the variable that stored the instance to None
     
     def open_history_window(self):
         '''Create an instance of the history_frame class'''
@@ -461,13 +520,17 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         self.history_window_open = True # set boolean to true now that window is open
         '''source: https://www.reddit.com/r/Tkinter/comments/vrxzuz/i_dont_understand_how_protocolwm_delete_window/'''
         # protocol sets it so when history_frame is closed, it replaces its own close window method with the on_history_window_close method from main_frame class
-        self.history_window_instance.protocol("WM_DELETE_WINDOW", self.on_history_window_close)
+        self.history_window_instance.protocol("WM_DELETE_WINDOW", lambda: self.on_history_window_close())
     
     def on_history_window_close(self): # when history_frame is closed
+        print('hi')
         self.history_window_open = False # set the variable ot false
         if self.history_window_instance: # if the instance is open (it will be open)
             self.history_window_instance.destroy() # destroy window
-            self.history_window_instance = None # set object to none    
+            self.history_window_instance = None # set object to none
+        
+        with open('history.json') as f: # if the clear history button has been pressed, re-update the json
+            self.data = json.load(f)
     
     def pull_error_window(self):
         '''error window that shows when you don't have enough gems to afford a
@@ -485,6 +548,74 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.new_window.geometry('250x150')
             
             Label(self.new_window, text="Error, not enough currency to afford pull.").pack(pady=20)
+
+"""details window that opens when the button is pressed"""
+class details_window(Toplevel):
+    
+    def __init__ (self, parent):
+        super().__init__(parent)
+        self.title("Details Window")
+        self.geometry("1280x720")
+        self.resizable(0,0)
+        self.configure(bg='black')
+        
+        '''TOP SIDE PANEL'''
+        top_panel = Frame(self, bg='black', height=90)
+        top_panel.pack(side='top', fill='x') # pack the frame
+        
+        label_title = Label(top_panel, text='Details', fg='white', bg='black',
+                            font=('Arial', 28))
+        label_title.pack(pady=20) # the title
+                
+        
+        '''MIDDLE PANEL'''
+        middle_panel = Frame(self, bg='black', height=570, # the frame
+                             highlightbackground='white', highlightthickness=2)
+        middle_panel.pack(fill='x', padx=35, pady=25)
+        
+        # first content
+        Label(middle_panel, text='Gacha Simulator:',
+              font=('Arial', 20), fg='white', bg='black',
+              justify='left').grid(row=0, column=0, sticky='w') # header 1 label
+        
+        Label(middle_panel, text='''Do 1x or 10x pulls on individual banners! Test your luck! When a pull is done, you will earn either a 3 star, 4 star or a 5 star!''',
+                            font=('Arial', 16), fg='white', bg='black',
+                            justify='left', wraplength=1200).grid(row=1, column=0, sticky='w') # paragraph 1 label
+        
+        # second content
+        Label(middle_panel, text='Rates:',
+              font=('Arial', 20), fg='white', bg='black',
+              justify='left').grid(row=2, column=0, sticky='w') # header 2 label
+        
+        Label(middle_panel, text=
+              '''The rate for 4 stars is 5.1%. Four stars are guaranteed every 10 pulls. The rate for 5 stars is 0.6%. After 74 pulls, the rate increases by 6% until it overcaps at 90 pulls (at rate 102.6%). This makes the guarantee 89 pity but this is rare to come across as the chance to win increases after 74.''',
+                            font=('Arial', 16), fg='white', bg='black',
+                            justify='left', wraplength=1200).grid(row=3, column=0, sticky='w') # paragraph 2 label
+        
+        # third content
+        Label(middle_panel, text='Currency:',
+              font=('Arial', 20), fg='white', bg='black',
+              justify='left').grid(row=4, column=0, sticky='w') # header 3 label
+        
+        Label(middle_panel, text=
+              '''1x pulls cost 160 gems, 10x pulls cost 1600 gems. Reward yourself currency using the currency widget! Enter an integer larger than 0 and then select the add or subtract button, to affect your currency in that exact way!''',
+                            font=('Arial', 16), fg='white', bg='black',
+                            justify='left', wraplength=1200).grid(row=5, column=0, sticky='w')
+        
+        # fourth content
+        Label(middle_panel, text='History',
+              font=('Arial', 20), fg='white', bg='black',
+              justify='left').grid(row=6, column=0, sticky='w') # header 4 label
+        
+        Label(middle_panel, text=
+              '''Each banner has its own pity count and history. You can view these individual pities using the history window button. Simply select a banner, then click the history button to see all the pulls you have made on that banner! You can also clear the history for that banner with a clear button.''',
+                            font=('Arial', 16), fg='white', bg='black',
+                            justify='left', wraplength=1200).grid(row=7, column=0, sticky='w')
+        
+        # image
+        global honkai_image # create a global variable so PhotoImage and the label has a strong reference to the file path
+        honkai_image = PhotoImage(file='./download.png')
+        Label(middle_panel, image=honkai_image, bg='black').grid(row=8, column=0, sticky='nswe')        
 
 """history gui window that opens when history button is pressed"""
 class history_frame(Toplevel): # toplevel is used here instead of tk as that is the tkinter module for opening an extra window
@@ -542,15 +673,19 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
         
         self.prev_button = Button(page_frame, text='<-- Previous', font=('Arial',14),
                                   command=self.prev_page) # previous page button
-        self.prev_button.grid(row=0,column=0,padx=20)
+        self.prev_button.grid(row=0,column=0, padx=20)
         
-        self.page_label = Label(page_frame,text=f"Page {self.current_page + 1}", font=("Arial",14),
+        self.page_label = Label(page_frame,text=f"Page {self.current_page + 1} of 1", font=("Arial",14),
                                 fg='white',bg='black') # label to display page
-        self.page_label.grid(row=0,column=1)
+        self.page_label.grid(row=0,column=1, padx=20)
         
         self.next_button = Button(page_frame, text='Next -->', font=('Arial',14),
                                   command=self.next_page) # next page button
-        self.next_button.grid(row=0,column=2,padx=20)
+        self.next_button.grid(row=0,column=2, padx=20)
+        
+        self.clear_button = Button(page_frame, text='Clear History', font=('Arial', 14),
+                                   command=self.clear_history)
+        self.clear_button.grid(row=0, column=3, sticky='e', padx=50)        
         
         self.load_info() # load info into the list pull_info
         self.update_display() # add content to the display
@@ -615,7 +750,7 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
                     for i in range(self.ones, 10, 1):
                         self.entries[i].configure(
                             bg='black')
-            
+                                    
             if self.current_page == 0: # if first page, disable prev, enable next
                 self.prev_button.config(state='disabled')
                 self.next_button.config(state='normal')
@@ -625,18 +760,28 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
             else: # if not first or last, enable both
                 self.prev_button.config(state='normal')
                 self.next_button.config(state='normal')
+        
+            self.page_label.config(text=f"Page {self.current_page + 1} of {len(self.pull_info)}") # update page label
     
     def prev_page(self): # button for previous page
         if (self.current_page + 1) > 1: # if not at first page
             self.current_page -= 1 # minus page by 1
-            self.page_label.config(text=f"Page {self.current_page + 1}") # change label
+            self.page_label.config(text=f"Page {self.current_page + 1} of {len(self.pull_info)}") # change label
             self.update_display() # update labels to show new pulls
     
     def next_page(self): # button for next page
         if (self.current_page + 1) < len(self.pull_info): # if not at last page
             self.current_page += 1 # add page by 1
-            self.page_label.config(text=f"Page {self.current_page + 1}") # update label
+            self.page_label.config(text=f"Page {self.current_page + 1} of {len(self.pull_info)}") # update label
             self.update_display() # update labels in center
+    
+    def clear_history(self): # button for clearing json history
+        self.data[self.current_banner] = {"history": [], "warp_4": 0, "warp_5": 0}
+        
+        with open("history.json", 'w') as f: # rewrite the json to be cleared
+            json.dump(self.data, f, indent=1)
+        
+        self.destroy()
 
 if __name__ == "__main__":
     app = main_frame()
