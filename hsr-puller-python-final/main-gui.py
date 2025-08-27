@@ -30,7 +30,7 @@ import json
 import random
 
 """main gui that opens when program is run"""
-class main_frame(Tk): # parameter Tk is used to create the window in super()
+class MainWindow(Tk): # parameter Tk is used to create the window in super()
     
     def __init__(self):
         '''Initialisation method'''
@@ -38,7 +38,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
         super().__init__() # this is necessary for creating history frame
         '''super().__init__() is the same as doing self.root = root from version
         1. Difference is that we do not need to use root, we are putting Tk as a
-        parameter in the class - main_frame(Tk): and super calls from that.'''
+        parameter in the class - MainWindow(Tk): and super calls from that.'''
         '''source where I learned this information:
         https://www.geeksforgeeks.org/python/python-super-with-__init__-method/
         https://stackoverflow.com/questions/576169/understanding-python-super-with-init-methods'''
@@ -488,7 +488,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
     
     def details_window_creator(self):
         '''create an instance of the details window class'''
-        self.details_window_instance = details_window(self) # create the instance
+        self.details_window_instance = DetailsWindow(self) # create the instance
         # when the window closes run the on_close() method
         self.details_window_instance.protocol("WM_DELETE_WINDOW", self.on_details_window_close)
     
@@ -499,7 +499,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.details_window_instance = None # set the variable that stored the instance to None
     
     def open_history_window(self):
-        '''Create an instance of the history_frame class'''
+        '''Create an instance of the HistoryWindow class'''
         if self.current_banner == 0: # if a banner has not been selected
             if self.err_window_creation == False:
                 self.err_window_creation = True
@@ -516,15 +516,15 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             self.history_window_creator() # reopen the window
     
     def history_window_creator(self):
-        self.history_window_instance = history_frame(self) # create the window's instance
+        self.history_window_instance = HistoryWindow(self) # create the window's instance
         self.history_window_open = True # set boolean to true now that window is open
         '''source: https://www.reddit.com/r/Tkinter/comments/vrxzuz/i_dont_understand_how_protocolwm_delete_window/'''
-        # protocol sets it so when history_frame is closed, it replaces its own close window method with the on_history_window_close method from main_frame class
+        # protocol sets it so when HistoryWindow is closed, it replaces its own close window method with the on_history_window_close method from MainWindow class
         self.history_window_instance.protocol("WM_DELETE_WINDOW", lambda: self.on_history_window_close())
     
-    def on_history_window_close(self): # when history_frame is closed
+    def on_history_window_close(self): # when HistoryWindow is closed
         print('hi')
-        self.history_window_open = False # set the variable ot false
+        self.history_window_open = False # set the variable to false
         if self.history_window_instance: # if the instance is open (it will be open)
             self.history_window_instance.destroy() # destroy window
             self.history_window_instance = None # set object to none
@@ -550,7 +550,7 @@ class main_frame(Tk): # parameter Tk is used to create the window in super()
             Label(self.new_window, text="Error, not enough currency to afford pull.").pack(pady=20)
 
 """details window that opens when the button is pressed"""
-class details_window(Toplevel):
+class DetailsWindow(Toplevel):
     
     def __init__ (self, parent):
         super().__init__(parent)
@@ -618,14 +618,14 @@ class details_window(Toplevel):
         Label(middle_panel, image=honkai_image, bg='black').grid(row=8, column=0, sticky='nswe')        
 
 """history gui window that opens when history button is pressed"""
-class history_frame(Toplevel): # toplevel is used here instead of tk as that is the tkinter module for opening an extra window
+class HistoryWindow(Toplevel): # toplevel is used here instead of tk as that is the tkinter module for opening an extra window
     
     def __init__(self, parent):
         '''Initialisation method'''
         '''source for learning how to make a parent class open child class:
         https://python-forum.io/thread-32514.html'''
         # parent parameter is used to refer to parameter self that is passed from main-frame method
-        # history_window_creator(self) in code self.history_window_instance = history_frame(self)
+        # history_window_creator(self) in code self.history_window_instance = HistoryWindow(self)
         super().__init__(parent)
         self.title("History Window")
         self.geometry("1280x720") # set the dimensions of the window
@@ -784,5 +784,5 @@ class history_frame(Toplevel): # toplevel is used here instead of tk as that is 
         self.destroy()
 
 if __name__ == "__main__":
-    app = main_frame()
+    app = MainWindow()
     app.mainloop()
